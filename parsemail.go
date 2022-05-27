@@ -144,6 +144,16 @@ func parseMultipartRelated(msg io.Reader, boundary string) (textBody, htmlBody s
 			textBody += tb
 			attachments = append(attachments, at...)
 			embeddedFiles = append(embeddedFiles, ef...)
+		case contentTypeMultipartMixed:
+			tb, hb, at, ef, err := parseMultipartMixed(part, params["boundary"])
+			if err != nil {
+				return textBody, htmlBody, attachments, embeddedFiles, err
+			}
+
+			htmlBody += hb
+			textBody += tb
+			attachments = append(attachments, at...)
+			embeddedFiles = append(embeddedFiles, ef...)
 		default:
 			if isEmbeddedFile(part) {
 				ef, err := decodeEmbeddedFile(part)
