@@ -337,12 +337,27 @@ func decodeEmbeddedFile(part *multipart.Part) (ef EmbeddedFile, err error) {
 	return
 }
 
+func getFileNameFromPart(part *multipart.Part) string {
+	if fn := part.FileName(); fn != "" {
+		return fn
+	}
+
+	for _, ft := range strings.Split(part.Header.Get("Content-Type"), ";") {
+		ft = strings.TrimSpace(ft)
+		if strings.HasPrefix(ft, "name=") {
+			return strings.TrimPrefix(ft, "name=")
+		}
+	}
+
+	return ""
+}
+
 func isAttachment(part *multipart.Part) bool {
-	return part.FileName() != ""
+	return getFileNameFromPart(part) != ""
 }
 
 func decodeAttachment(part *multipart.Part) (at Attachment, err error) {
-	filename := decodeMimeSentence(part.FileName())
+	filename := decodeMimeSentence(getFileNameFromPart(part))
 	decoded, err := decodeContent(part, part.Header.Get("Content-Transfer-Encoding"))
 	if err != nil {
 		return
