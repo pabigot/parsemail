@@ -349,6 +349,16 @@ func getFileNameFromPart(part *multipart.Part) string {
 		}
 	}
 
+	// Accommodate idiot JavaMail that doesn't quote filename values that
+	// include spaces.
+	cd := part.Header.Get("Content-Disposition")
+	for _, ft := range strings.Split(cd, ";") {
+		ft = strings.TrimSpace(ft)
+		if strings.HasPrefix(ft, "filename=") {
+			return strings.TrimPrefix(ft, "filename=")
+		}
+	}
+
 	return ""
 }
 
