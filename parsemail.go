@@ -456,6 +456,8 @@ func (hp headerParser) parseTime(s string) (t time.Time) {
 		"Mon, 2 Jan 2006 15:04:05 -0700",
 		time.RFC1123Z + " (MST)",
 		"Mon, 2 Jan 2006 15:04:05 -0700 (MST)",
+		"Mon, 2 Jan 2006 15:04:05 MST",
+		"2 Jan 2006 15:04:05 -0700",
 	}
 
 	for _, format := range formats {
