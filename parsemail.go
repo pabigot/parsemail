@@ -483,6 +483,7 @@ func (hp headerParser) parseMessageIdList(s string) (result []string) {
 		return
 	}
 
+	s = strings.ReplaceAll(s, ">,<", "> <")
 	for _, p := range strings.Split(s, " ") {
 		if strings.Trim(p, " \n") != "" {
 			result = append(result, hp.parseMessageId(p))
