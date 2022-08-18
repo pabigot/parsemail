@@ -18,6 +18,7 @@ const contentTypeMultipartAlternative = "multipart/alternative"
 const contentTypeMultipartRelated = "multipart/related"
 const contentTypeTextHtml = "text/html"
 const contentTypeTextPlain = "text/plain"
+const contentTypeMessageRFC822 = "message/rfc822"
 
 // Parse an email message read from io.Reader into parsemail.Email struct
 func Parse(r io.Reader) (email Email, err error) {
@@ -240,6 +241,7 @@ func parseMultipartAlternative(msg io.Reader, boundary string) (textBody, htmlBo
 
 func parseMultipartMixed(msg io.Reader, boundary string) (textBody, htmlBody string, attachments []Attachment, embeddedFiles []EmbeddedFile, err error) {
 	mr := multipart.NewReader(msg, boundary)
+	ei := 0
 	for {
 		part, err := mr.NextPart()
 		if err == io.EOF {
@@ -283,6 +285,23 @@ func parseMultipartMixed(msg io.Reader, boundary string) (textBody, htmlBody str
 				return textBody, htmlBody, attachments, embeddedFiles, err
 			}
 
+			attachments = append(attachments, at)
+		} else if contentType == contentTypeMessageRFC822 {
+			decoded, err := decodeContent(part, part.Header.Get("Content-Transfer-Encoding"))
+			if err != nil {
+				return textBody, htmlBody, attachments, embeddedFiles, err
+			}
+			ei++
+			// For unknown reasons we can't just store the decoded
+			// reader; it reads back empty.  Consume from it, then
+			// store a reader that produces it.
+			var bb bytes.Buffer
+			bb.ReadFrom(decoded)
+			at := Attachment{
+				Filename:    fmt.Sprintf("attach-%d.eml", ei),
+				Data:        strings.NewReader(bb.String()), //decoded,
+				ContentType: strings.Split(part.Header.Get("Content-Type"), ";")[0],
+			}
 			attachments = append(attachments, at)
 		} else {
 			return textBody, htmlBody, attachments, embeddedFiles, fmt.Errorf("Unknown multipart/mixed nested mime type: %s", contentType)
